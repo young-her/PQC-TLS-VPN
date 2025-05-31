@@ -61,7 +61,7 @@ PQC-TLS-VPN/
 │   │   └── TLS/
 │   │       ├── client.go       # CLI VPN 客户端，使用标准 TLS 1.3
 │   │       └── client_ui.go    # GUI VPN 客户端，使用标准 TLS 1.3
-│   └── cert/										# 自证证书
+│   └── cert/                   # 自证证书
 ├── tls_vpn_server/
 │   ├── code/
 │   │   ├── PQ-TLS/
@@ -69,7 +69,7 @@ PQC-TLS-VPN/
 │   │   │   └── server.go       # VPN 服务器 (如果客户端提议，则支持 PQC 增强的 TLS 1.3)
 │   │   └── TLS/
 │   │       └── server.go       # VPN 服务器 (标准 TLS 1.3)
-│   └── cert/										# 自证证书
+│   └── cert/                  	# 自证证书
 └── README.md                   # 本文档
 ```
 
