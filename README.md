@@ -1,20 +1,14 @@
 # PQC-TLS-VPN: 探索基于 TLS 的 VPN 中的后量子密码学
 
-本项目实现并基准测试了使用标准 TLS 1.3 以及使用后量子密码学 (PQC) 增强的 TLS 1.3 的 VPN 客户端和服务器，特别探索了 `X25519MLKEM768` (Kyber-768) 密钥交换机制。此外，项目还包含一个实验性的客户端，该客户端演示了在初始 TLS 连接之上隧道化的自定义 PQC 握手协议.
+本项目实现并基准测试了使用标准 TLS 1.3 以及使用后量子密码学 (PQC) 增强的 TLS 1.3 的 VPN 客户端和服务器，主要使用了`X25519MLKEM768` 密钥交换机制。
 
 本项目提供：
 
 * 标准 TLS 1.3 VPN 客户端和服务器。
-
 * PQC 增强的 TLS 1.3 VPN 客户端（使用 `X25519MLKEM768`）和服务器。
-
 * 部分客户端版本的图形用户界面 (GUI)，使用 Fyne 构建。
-
 * 部分客户端版本的命令行界面 (CLI)。
-
 * 基准测试工具，用于比较标准 TLS 和 PQC-TLS 之间的握手性能（时间、CPU、内存）和数据吞吐量。
-
-* 一个实验性的 CLI 客户端，演示了使用 CIRCL 库中的 Kyber 和 Dilithium 的自定义 PQC 握手层，该握手层运行在标准 TLS 连接之上。
 
 ## 主要特性
 
@@ -58,7 +52,6 @@
 
 ```text
 PQC-TLS-VPN/
-├── cert/                       # (假设的) 证书目录
 ├── tls_vpn_client/
 │   ├── code/
 │   │   ├── PQ-TLS/
@@ -68,7 +61,7 @@ PQC-TLS-VPN/
 │   │   └── TLS/
 │   │       ├── client.go       # CLI VPN 客户端，使用标准 TLS 1.3
 │   │       └── client_ui.go    # GUI VPN 客户端，使用标准 TLS 1.3
-│   └── ...
+│   └── cert/										# 自证证书
 ├── tls_vpn_server/
 │   ├── code/
 │   │   ├── PQ-TLS/
@@ -76,35 +69,29 @@ PQC-TLS-VPN/
 │   │   │   └── server.go       # VPN 服务器 (如果客户端提议，则支持 PQC 增强的 TLS 1.3)
 │   │   └── TLS/
 │   │       └── server.go       # VPN 服务器 (标准 TLS 1.3)
-│   └── ...
+│   └── cert/										# 自证证书
 └── README.md                   # 本文档
 ```
 
 * **`tls_vpn_client/code/PQ-TLS/`**: 包含与后量子密码学相关的客户端和工具。
 
   * `benchmark.go`: 一个 GUI 工具，用于运行和比较标准 TLS 与 PQC-TLS (使用 `X25519MLKEM768`) 的握手和数据传输性能。
-
-  * `client.go`: 一个基于 CLI 的 VPN 客户端，首先建立标准 TLS 连接，然后执行额外的自定义 PQC 握手，使用 Kyber 进行密钥封装，使用 Dilithium 进行签名，以建立用于数据加密的独立共享密钥。这是一种实验性方法。
-
-  * `client_ui.go`: 一个基于 GUI 的 VPN 客户端，使用标准 TLS 1.3，但如果服务器支持，则优先使用 `X25519MLKEM768` 进行密钥交换。
-
+* `client_ui.go`: 一个基于 GUI 的 VPN 客户端，使用标准 TLS 1.3，但如果服务器支持，则优先使用 `X25519MLKEM768` 进行密钥交换。
 * **`tls_vpn_client/code/TLS/`**: 包含使用标准 TLS 1.3 且未进行 PQC 修改的客户端。
 
   * `client.go`: 一个基于 CLI 的 VPN 客户端，使用标准 TLS 1.3。
 
   * `client_ui.go`: 一个基于 GUI 的 VPN 客户端，使用标准 TLS 1.3。
-
 * **`tls_vpn_server/code/PQ-TLS/`**:
 
   * `benchmark.go`: 一个服务器，设计用于处理大量握手尝试并记录性能统计信息（握手时间、CPU/内存使用情况）。
 
   * `server.go`: 一个 VPN 服务器。虽然位于 PQ-TLS 目录中，但其代码是一个标准的 TLS 1.3 服务器。如果客户端提议并且底层的 Go 加密库支持，它将协商 PQC 密码套件（如 `X25519MLKEM768`）。它会将 TLS 会话密钥保存到 `tls_keys.log`。
-
 * **`tls_vpn_server/code/TLS/`**:
 
   * `server.go`: 一个标准的 TLS 1.3 VPN 服务器，功能上类似于 `PQ-TLS/` 中的服务器，但在概念上是分开的。它也会将 TLS 会话密钥保存到 `tls_keys.log`。
 
-##核心技术
+## 核心技术
 
 * **Go (Golang):** 用于客户端、服务器和基准测试工具的核心逻辑。
 
@@ -132,13 +119,13 @@ PQC-TLS-VPN/
 
 代码通常以相对路径（如 `../../cert/`）引用这些证书。这意味着您应该在项目根目录下创建一个 `cert` 目录 (例如, `PQC-TLS-VPN/cert/`) 并将这些文件放在那里。
 
-您可以使用 OpenSSL 或其他证书管理工具生成这些证书。请确保服务器证书中的通用名称 (CN) 或主题备用名称 (SAN) 与客户端用于连接的地址匹配。
+您可以使用 **OpenSSL** 或其他证书管理工具生成这些证书。请确保服务器证书中的通用名称 (CN) 或主题备用名称 (SAN) 与客户端用于连接的地址匹配。
 
 ## 构建和运行
 
 ### 前置条件
 
-* **Go:** 1.24.2 或更高版本 (以便 `crypto/tls` 支持 `X25519MLKEM768`)。
+* **Go:** 1.24或更高版本 (以便 `crypto/tls` 支持 `X25519MLKEM768`)。
 
 * **GCC/Cgo:** Fyne 应用程序需要。
 
@@ -198,27 +185,6 @@ sudo ./vpn_client_pqtls_ui # 可能需要 sudo 进行网络配置
 
 GUI 客户端还具有“测试 TLS 握手”功能，用于测量与配置服务器的握手性能。
 
-### 3. VPN 客户端 (CLI)
-
-**A. 标准 TLS CLI 客户端:**
-
-```shell
-cd tls_vpn_client/code/TLS/
-go build -o vpn_client_tls_cli client.go
-sudo ./vpn_client_tls_cli # 可能需要 sudo 进行网络配置
-```
-
-**B. 自定义 PQC 握手 CLI 客户端 (Kyber+Dilithium over TLS):**
-此客户端首先执行标准 TLS 握手，然后执行使用 Kyber 和 Dilithium 的额外自定义 PQC 握手。请确保其连接的服务器是标准 TLS 服务器（例如 `tls_vpn_server/code/TLS/server.go` 或 `tls_vpn_server/code/PQ-TLS/server.go`，因为它们未实现此自定义 PQC 握手的服务器端）。自定义 PQC 部分旨在在初始 TLS 设置*之后*保护数据。
-
-```shell
-cd tls_vpn_client/code/PQ-TLS/
-go build -o vpn_client_custom_pqc_cli client.go
-sudo ./vpn_client_custom_pqc_cli # 可能需要 sudo 进行网络配置
-```
-
-**注意:** 针对此特定自定义 PQC 握手客户端 (`vpn_client_custom_pqc_cli`) 的服务器端逻辑并未明确存在于提供的服务器文件中。这些服务器充当标准 TLS 端点。此客户端似乎是在已建立的 TLS 通道上分层 PQC 的实验。
-
 ### 4. 基准测试工具
 
 **A. 客户端握手和传输基准测试 (GUI):**
@@ -249,19 +215,9 @@ go build -o benchmark_server benchmark.go
 
   * 用于 `tls_vpn_client/code/PQ-TLS/client_ui.go` 和客户端 `benchmark.go`。
 
-  * 依赖于 Go 内置的对 `X25519MLKEM768` 的支持 (在 Go 1.19+ 中可用)，通过 `tls.Config.CurvePreferences` 实现。
+  * 依赖于 Go 内置的对 `X25519MLKEM768` 的支持 (在 Go 1.24+ 中可用)，通过 `tls.Config.CurvePreferences` 实现。
 
   * 如果客户端提议并且其 Go 版本支持，服务器 (`tls_vpn_server/code/PQ-TLS/server.go` 和 `tls_vpn_server/code/TLS/server.go`) 将协商此机制。
-
-* **自定义 PQC 协议 (基于 TLS 的 Kyber KEM + Dilithium 签名):**
-
-  * 在 `tls_vpn_client/code/PQ-TLS/client.go` 中实现。
-
-  * 此客户端执行标准 TLS 1.3 握手，然后发送 Kyber 公钥。服务器（如果是自定义 PQC 服务器）将使用 Dilithium 对其进行签名并响应密文（封装的共享密钥）。客户端验证签名并解封装共享密钥。
-
-  * 这会建立一个 PQC 派生的共享密钥，该密钥*独立于*初始 TLS 握手的主密钥。
-
-  * **重要提示:** 提供的服务器文件（两个服务器目录中的 `server.go`）**不包含**此自定义 PQC 握手的相应服务器端逻辑。它们充当标准 TLS 服务器。此客户端是一个实验性演示。
 
 ## 使用方法
 
