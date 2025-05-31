@@ -56,7 +56,7 @@
 
 仓库结构如下：
 
-
+```text
 PQC-TLS-VPN/
 ├── cert/                       # (假设的) 证书目录
 ├── tls_vpn_client/
@@ -78,7 +78,7 @@ PQC-TLS-VPN/
 │   │       └── server.go       # VPN 服务器 (标准 TLS 1.3)
 │   └── ...
 └── README.md                   # 本文档
-
+```
 
 * **`tls_vpn_client/code/PQ-TLS/`**: 包含与后量子密码学相关的客户端和工具。
 
@@ -112,11 +112,9 @@ PQC-TLS-VPN/
 
 * **TLS 1.3:** 安全通信的标准。
 
-* **`crypto/tls` (Go 标准库):** 用于 TLS 实现。PQC 支持依赖于所使用的 Go 版本的功能 (Go 1.19+ 版本包含对 `X25519Kyber768Draft00` 的支持)。
+* **`crypto/tls` (Go 标准库):** 用于 TLS 实现。PQC 支持依赖于所使用的 Go 版本的功能
 
 * **`X25519MLKEM768` (Kyber):** 用于 TLS 1.3 中混合密钥交换的后量子密钥封装机制。
-
-* **Cloudflare CIRCL:** `tls_vpn_client/code/PQ-TLS/client.go` (自定义 PQC 握手客户端) 使用 `github.com/cloudflare/circl/kem/kyber/kyber512` 和 `github.com/cloudflare/circl/sign/dilithium/mode2`。
 
 * **`github.com/songgao/water`:** 用于创建和管理 TUN 网络接口。
 
@@ -162,20 +160,20 @@ PQC-TLS-VPN/
 
 **A. 标准 TLS 服务器:**
 
-
+```shell
 cd tls_vpn_server/code/TLS/
 go build -o vpn_server_tls server.go
 sudo ./vpn_server_tls # 可能需要 sudo 进行网络配置
-
+```
 
 **B. 支持 PQC-TLS 的服务器:**
 此服务器本质上是一个 TLS 1.3 服务器，如果客户端 (例如 `PQ-TLS/client_ui.go`) 提议，它可以协商 PQC 密码套件，如 `X25519MLKEM768`。
 
-
+```shell
 cd tls_vpn_server/code/PQ-TLS/
 go build -o vpn_server_pqtls server.go
 sudo ./vpn_server_pqtls # 可能需要 sudo 进行网络配置
-
+```
 
 ### 2. VPN 客户端 (GUI)
 
@@ -183,20 +181,20 @@ sudo ./vpn_server_pqtls # 可能需要 sudo 进行网络配置
 
 **A. 标准 TLS GUI 客户端:**
 
-
+```shell
 cd tls_vpn_client/code/TLS/
 go build -o vpn_client_tls_ui client_ui.go
 sudo ./vpn_client_tls_ui # 可能需要 sudo 进行网络配置
-
+```
 
 **B. PQC-TLS GUI 客户端 (在 TLS 1.3 中使用 X25519MLKEM768):**
 此客户端将在 TLS 1.3 握手期间尝试使用 `X25519MLKEM768`。
 
-
+```shell
 cd tls_vpn_client/code/PQ-TLS/
 go build -o vpn_client_pqtls_ui client_ui.go
 sudo ./vpn_client_pqtls_ui # 可能需要 sudo 进行网络配置
-
+```
 
 GUI 客户端还具有“测试 TLS 握手”功能，用于测量与配置服务器的握手性能。
 
@@ -204,20 +202,20 @@ GUI 客户端还具有“测试 TLS 握手”功能，用于测量与配置服�
 
 **A. 标准 TLS CLI 客户端:**
 
-
+```shell
 cd tls_vpn_client/code/TLS/
 go build -o vpn_client_tls_cli client.go
 sudo ./vpn_client_tls_cli # 可能需要 sudo 进行网络配置
-
+```
 
 **B. 自定义 PQC 握手 CLI 客户端 (Kyber+Dilithium over TLS):**
 此客户端首先执行标准 TLS 握手，然后执行使用 Kyber 和 Dilithium 的额外自定义 PQC 握手。请确保其连接的服务器是标准 TLS 服务器（例如 `tls_vpn_server/code/TLS/server.go` 或 `tls_vpn_server/code/PQ-TLS/server.go`，因为它们未实现此自定义 PQC 握手的服务器端）。自定义 PQC 部分旨在在初始 TLS 设置*之后*保护数据。
 
-
+```shell
 cd tls_vpn_client/code/PQ-TLS/
 go build -o vpn_client_custom_pqc_cli client.go
 sudo ./vpn_client_custom_pqc_cli # 可能需要 sudo 进行网络配置
-
+```
 
 **注意:** 针对此特定自定义 PQC 握手客户端 (`vpn_client_custom_pqc_cli`) 的服务器端逻辑并未明确存在于提供的服务器文件中。这些服务器充当标准 TLS 端点。此客户端似乎是在已建立的 TLS 通道上分层 PQC 的实验。
 
@@ -226,22 +224,22 @@ sudo ./vpn_client_custom_pqc_cli # 可能需要 sudo 进行网络配置
 **A. 客户端握手和传输基准测试 (GUI):**
 此工具 (`tls_vpn_client/code/PQ-TLS/benchmark.go`) 连接到服务器（理想情况下是 `tls_vpn_server/code/PQ-TLS/benchmark.go` 服务器或任何标准/PQC-TLS 服务器），并对标准 TLS 和 PQC-TLS（使用 `X25519MLKEM768`）执行多次握手测试。它测量握手时间、CPU/内存使用情况（客户端）以及可选的数据传输吞吐量。
 
-
+```shell
 cd tls_vpn_client/code/PQ-TLS/
 go build -o pq_std_benchmark_client benchmark.go
 ./pq_std_benchmark_client
-
+```
 
 在 UI 中配置服务器地址、证书路径和测试参数。
 
 **B. 服务器端握手基准测试:**
 此服务器 (`tls_vpn_server/code/PQ-TLS/benchmark.go`) 设计用于接收大量的 TLS 握手尝试。它记录有关握手持续时间、成功/失败率以及服务器端 CPU/内存消耗的详细统计信息。它旨在与进行大量连接尝试的客户端（如客户端基准测试工具或脚本）一起使用。
 
-
+```shell
 cd tls_vpn_server/code/PQ-TLS/
 go build -o benchmark_server benchmark.go
 ./benchmark_server
-
+```
 
 它在端口 `443` 上侦听，并使用 `../../cert/server.crt` 和 `../../cert/server.key`。
 
